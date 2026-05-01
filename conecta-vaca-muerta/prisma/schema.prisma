@@ -1,0 +1,621 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  passwordHash       String
+  role               UserRole
+  status             UserStatus          @default(pending)
+  phone              String?
+  verifiedPhone      Boolean             @default(false)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  companyProfile     CompanyProfile?
+  talentProfile      TalentProfile?
+  magazineContents   IAMagazineContent[]
+  sponsorProfile     SponsorProfile?
+  subscriptions      Subscription[]
+  organizedEvents    Event[]
+  eventRegistrations EventRegistration[]
+}
+
+model TalentProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  fullName   String
+  headline   String?
+  profession String?
+  bio        String?
+
+  experienceYears Int?
+
+  currentLocationText String?
+  zoneSlug            String?
+
+  availabilityStatus String?
+
+  linkedinUrl String?
+
+  cvFileUrl String?
+
+  cvParsedData Json?
+
+  expectedSalaryMin Decimal? @db.Decimal(12, 2)
+  expectedSalaryMax Decimal? @db.Decimal(12, 2)
+
+  openToRelocate  Boolean @default(false)
+  openToShiftWork Boolean @default(false)
+
+  geolocation Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  talentSkills TalentSkill[]
+
+  @@index([profession])
+  @@index([zoneSlug])
+  @@index([experienceYears])
+}
+
+model Skill {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  slug     String  @unique
+  category String?
+
+  createdAt DateTime @default(now())
+
+  talentSkills TalentSkill[]
+  jobSkills    JobSkill[]
+}
+
+model TalentSkill {
+  talentProfileId String
+  skillId         String
+
+  level           String?
+  yearsExperience Int?
+
+  createdAt DateTime @default(now())
+
+  talentProfile TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([talentProfileId, skillId])
+  @@index([skillId])
+}
+
+model CompanyProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  companyName String
+  legalName   String?
+  cuit        String? @unique
+  description String?
+
+  website     String?
+  linkedinUrl String?
+
+  logoUrl   String?
+  bannerUrl String?
+
+  mainZoneSlug String?
+  addressText  String?
+
+  geolocation Json?
+
+  employeeCount Int?
+
+  verificationStatus CompanyVerificationStatus @default(unverified)
+  isFeatured         Boolean                   @default(false)
+
+  contactEmail String?
+  contactPhone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobs                 Job[]
+  opportunities        Opportunity[]
+  opportunityResponses OpportunityResponse[]
+  companyRubros        CompanyRubro[]
+
+  @@index([companyName])
+  @@index([mainZoneSlug])
+  @@index([verificationStatus])
+  @@index([isFeatured])
+}
+
+model Job {
+  id String @id @default(uuid())
+
+  companyProfileId String
+
+  title String
+  slug  String? @unique
+
+  description String
+
+  locationText String?
+  zoneSlug     String?
+
+  geolocation Json?
+
+  requirements Json?
+
+  salaryMin Decimal? @db.Decimal(12, 2)
+  salaryMax Decimal? @db.Decimal(12, 2)
+
+  currency String? @default("ARS")
+
+  jobType String
+
+  status JobStatus @default(draft)
+
+  isRemote   Boolean @default(false)
+  isFeatured Boolean @default(false)
+
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  deletedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+
+  companyProfile CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+
+  jobSkills JobSkill[]
+
+  @@index([companyProfileId])
+  @@index([status])
+  @@index([zoneSlug])
+}
+
+model JobSkill {
+  jobId   String
+  skillId String
+
+  isRequired Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, skillId])
+  @@index([skillId])
+}
+
+model Application {
+  id String @id @default(uuid())
+
+  jobId           String
+  talentProfileId String
+
+  status ApplicationStatus @default(applied)
+
+  appliedAt DateTime @default(now())
+
+  cvVersionAtApply String?
+
+  coverLetter String?
+
+  aiMatchScore Decimal? @db.Decimal(5, 2)
+
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job           Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  talentProfile TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, talentProfileId])
+  @@index([jobId])
+  @@index([talentProfileId])
+  @@index([status])
+}
+
+model Opportunity {
+  id String @id @default(uuid())
+
+  requesterCompanyProfileId String
+
+  type        OpportunityType
+  title       String
+  description String
+
+  categoryText String?
+  zoneSlug     String?
+  locationText String?
+
+  geolocation Json?
+
+  budgetMin Decimal? @db.Decimal(12, 2)
+  budgetMax Decimal? @db.Decimal(12, 2)
+
+  currency String @default("ARS")
+
+  deadlineAt DateTime?
+
+  status OpportunityStatus @default(open)
+
+  isUrgent Boolean @default(false)
+
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  requesterCompanyProfile CompanyProfile @relation(fields: [requesterCompanyProfileId], references: [id], onDelete: Cascade)
+
+  responses OpportunityResponse[]
+
+  @@index([requesterCompanyProfileId])
+  @@index([type])
+  @@index([status])
+  @@index([zoneSlug])
+  @@index([deadlineAt])
+}
+
+model OpportunityResponse {
+  id String @id @default(uuid())
+
+  opportunityId             String
+  responderCompanyProfileId String
+
+  message String
+
+  proposedPrice Decimal? @db.Decimal(12, 2)
+
+  currency String @default("ARS")
+
+  status ResponseStatus @default(pending)
+
+  respondedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  responderCompanyProfile CompanyProfile @relation(fields: [responderCompanyProfileId], references: [id], onDelete: Cascade)
+
+  @@index([opportunityId])
+  @@index([responderCompanyProfileId])
+  @@index([status])
+}
+
+model Rubro {
+  id String @id @default(uuid())
+
+  parentId String?
+
+  name        String  @unique
+  slug        String  @unique
+  description String?
+
+  createdAt DateTime @default(now())
+
+  parent   Rubro?  @relation("RubroTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Rubro[] @relation("RubroTree")
+
+  companyRubros CompanyRubro[]
+
+  @@index([parentId])
+  @@index([slug])
+}
+
+model CompanyRubro {
+  companyProfileId String
+  rubroId          String
+
+  createdAt DateTime @default(now())
+
+  companyProfile CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  rubro          Rubro          @relation(fields: [rubroId], references: [id], onDelete: Cascade)
+
+  @@id([companyProfileId, rubroId])
+  @@index([rubroId])
+}
+
+model Subscription {
+  id String @id @default(uuid())
+
+  userId String
+
+  planType SubscriptionPlanType
+  status   SubscriptionStatus   @default(pending_payment)
+
+  amount   Decimal
+  currency String  @default("ARS")
+
+  billingPeriod String @default("monthly")
+
+  paymentProvider    String?
+  paymentProviderRef String?
+
+  startedAt  DateTime?
+  endsAt     DateTime?
+  canceledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([planType])
+  @@index([endsAt])
+}
+
+model SponsorProfile {
+  id String @id @default(uuid())
+
+  userId String @unique
+
+  brandName   String
+  description String?
+
+  website String?
+  logoUrl String?
+
+  contactName  String?
+  contactEmail String?
+
+  budgetRange String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([brandName])
+}
+
+model ContentCategory {
+  id String @id @default(uuid())
+
+  name String @unique
+  slug String @unique
+
+  createdAt DateTime @default(now())
+
+  contents IAMagazineContentCategory[]
+}
+
+model IAMagazineContent {
+  id String @id @default(uuid())
+
+  authorUserId String
+
+  title String
+  slug  String @unique
+
+  excerpt String?
+  content String?
+
+  type   ContentType
+  status ContentStatus @default(draft)
+
+  coverImageUrl String?
+  videoUrl      String?
+  audioUrl      String?
+
+  transcriptionText String?
+  aiSummary         String?
+
+  isPremium Boolean @default(false)
+
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  categories IAMagazineContentCategory[]
+
+  @@index([authorUserId])
+  @@index([type])
+  @@index([status])
+  @@index([isPremium])
+  @@index([publishedAt])
+}
+
+model IAMagazineContentCategory {
+  contentId  String
+  categoryId String
+
+  content  IAMagazineContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  category ContentCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, categoryId])
+  @@index([categoryId])
+}
+
+model Event {
+  id String @id @default(uuid())
+
+  organizerUserId String?
+
+  title       String
+  slug        String  @unique
+  description String?
+
+  startAt DateTime
+  endAt   DateTime
+
+  locationText String?
+  zoneSlug     String?
+
+  geolocation Json?
+
+  isGlobal Boolean @default(false)
+
+  visibility EventVisibility @default(public)
+
+  externalUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizer User? @relation(fields: [organizerUserId], references: [id])
+
+  registrations EventRegistration[]
+
+  @@index([organizerUserId])
+  @@index([startAt])
+  @@index([endAt])
+  @@index([zoneSlug])
+  @@index([visibility])
+  @@index([isGlobal])
+}
+
+model EventRegistration {
+  id String @id @default(uuid())
+
+  eventId String
+  userId  String
+
+  status RegistrationStatus @default(registered)
+
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+enum EventVisibility {
+  public
+  premium
+  private
+}
+
+enum RegistrationStatus {
+  registered
+  attended
+  canceled
+  no_show
+}
+
+enum UserRole {
+  talent
+  company
+  sponsor
+  investor
+  admin
+}
+
+enum UserStatus {
+  active
+  inactive
+  pending
+  suspended
+}
+
+enum JobStatus {
+  draft
+  open
+  closed
+  paused
+  expired
+}
+
+enum JobType {
+  full_time
+  part_time
+  temporary
+  contract
+  internship
+  shift
+}
+
+enum ApplicationStatus {
+  applied
+  reviewed
+  shortlisted
+  interviewed
+  hired
+  rejected
+  withdrawn
+}
+
+enum CompanyVerificationStatus {
+  unverified
+  pending
+  verified
+  rejected
+}
+
+enum OpportunityType {
+  need
+  offer
+}
+
+enum OpportunityStatus {
+  open
+  in_progress
+  closed
+  canceled
+}
+
+enum ResponseStatus {
+  pending
+  accepted
+  rejected
+  withdrawn
+}
+
+enum SubscriptionPlanType {
+  recruiting
+  sponsorship
+  strategic
+}
+
+enum SubscriptionStatus {
+  pending_payment
+  active
+  canceled
+  expired
+  trial
+}
+
+enum ContentType {
+  article
+  video
+  interview
+  podcast
+}
+
+enum ContentStatus {
+  draft
+  published
+  archived
+}
