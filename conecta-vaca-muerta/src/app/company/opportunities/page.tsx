@@ -3,7 +3,28 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default async function CompanyOpportunitiesPage() {
+/*
+  Módulo: CompanyOpportunitiesPage
+
+  Función:
+  Listar oportunidades creadas por la empresa.
+  Incluye métricas, filtros y acceso a detalle.
+
+  Este módulo es la base del flujo B2B (empresa ↔ empresa).
+*/
+
+export default async function CompanyOpportunitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    status?: string;
+  }>;
+}) {
+  const params = await searchParams;
+
+  const selectedStatus =
+    params.status || "";
+
   const session =
     await getServerSession(authOptions);
 
@@ -22,11 +43,19 @@ export default async function CompanyOpportunitiesPage() {
 
   if (!company) redirect("/profile");
 
+  // Query con filtro opcional por estado
   const opportunities =
     await prisma.opportunity.findMany({
       where: {
         requesterCompanyProfileId:
           company.id,
+
+        ...(selectedStatus
+          ? {
+              status:
+                selectedStatus as any,
+            }
+          : {}),
       },
       include: {
         _count: {
@@ -40,6 +69,7 @@ export default async function CompanyOpportunitiesPage() {
       },
     });
 
+  // Métricas
   const total =
     opportunities.length;
 
@@ -74,6 +104,41 @@ export default async function CompanyOpportunitiesPage() {
         </a>
       </div>
 
+      {/* FILTROS */}
+      <form
+        method="GET"
+        className="flex gap-3 mb-6"
+      >
+        <select
+          name="status"
+          defaultValue={
+            selectedStatus
+          }
+          className="border p-2"
+        >
+          <option value="">
+            Todos
+          </option>
+
+          <option value="open">
+            Abiertas
+          </option>
+
+          <option value="in_progress">
+            En progreso
+          </option>
+
+          <option value="closed">
+            Cerradas
+          </option>
+        </select>
+
+        <button className="bg-black text-white px-4">
+          Filtrar
+        </button>
+      </form>
+
+      {/* MÉTRICAS */}
       <div className="grid md:grid-cols-4 gap-4 mb-10">
         <div className="border p-4 rounded">
           <p>Total</p>
@@ -104,37 +169,70 @@ export default async function CompanyOpportunitiesPage() {
         </div>
       </div>
 
+      {/* LISTADO */}
       <div className="space-y-4">
-        {opportunities.map((item) => (
-          <a
-            key={item.id}
-            href={`/company/opportunities/${item.id}`}
-            className="border p-5 rounded block"
-          >
-            <h2 className="text-xl font-bold">
-              {item.title}
-            </h2>
+        {opportunities.map(
+          (item) => (
+            <a
+              key={item.id}
+              href={`/company/opportunities/${item.id}`}
+              className="border p-5 rounded block"
+            >
+              <h2 className="text-xl font-bold">
+                {item.title}
+              </h2>
 
-            <p>
-              Estado: {item.status}
-            </p>
+              {/* Estado visual */}
+              <p className="text-sm mt-1">
+                Estado:{" "}
+                <span
+                  className={`px-2 py-1 rounded text-white text-xs ${
+                    item.status === "open"
+                      ? "bg-green-600"
+                      : item.status ===
+                        "in_progress"
+                      ? "bg-yellow-600"
+                      : "bg-gray-600"
+                  }`}
+                >
+                  {item.status}
+                </span>
+              </p>
 
-            <p>
-              Respuestas:{" "}
-              {item._count.responses}
-            </p>
+              <p className="text-sm mt-1">
+                Respuestas:{" "}
+                {
+                  item._count
+                    .responses
+                }
+              </p>
 
-            <p>
-              {item.locationText}
-            </p>
-          </a>
-        ))}
+              {item.locationText && (
+                <p className="text-sm mt-1">
+                  {item.locationText}
+                </p>
+              )}
 
-        {opportunities.length === 0 && (
-          <p>
-            Todavía no publicaste
-            oportunidades.
-          </p>
+              {/* Fecha */}
+              <p className="text-xs text-gray-500 mt-2">
+                {new Date(
+                  item.createdAt
+                ).toLocaleDateString()}
+              </p>
+
+              {/* CTA */}
+              <p className="text-sm underline mt-2">
+                Ver detalles →
+              </p>
+            </a>
+          )
+        )}
+
+        {opportunities.length ===
+          0 && (
+          <div className="border p-5 rounded">
+            No hay oportunidades con ese filtro.
+          </div>
         )}
       </div>
     </main>

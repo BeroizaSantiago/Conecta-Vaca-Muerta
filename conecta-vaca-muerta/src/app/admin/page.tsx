@@ -90,6 +90,13 @@ export default async function AdminPage() {
   >
     Gestionar Magazine
   </a>
+
+  <a
+  href="/admin/applications"
+  className="block border p-3 rounded"
+>
+  Supervisar Postulaciones
+</a>
 </div>
     </main>
   );

@@ -86,6 +86,7 @@ export default async function CompanyApplicationsPage({
         include: {
           job: true,
 
+          // Traemos todo lo necesario para perfil completo
           talentProfile: {
             include: {
               talentSkills: {
@@ -110,6 +111,7 @@ export default async function CompanyApplicationsPage({
         Postulantes Recibidos
       </h1>
 
+      {/* Filtros */}
       <form
         method="GET"
         className="flex gap-3 mb-8"
@@ -128,23 +130,18 @@ export default async function CompanyApplicationsPage({
           <option value="applied">
             applied
           </option>
-
           <option value="reviewed">
             reviewed
           </option>
-
           <option value="shortlisted">
             shortlisted
           </option>
-
           <option value="interviewed">
             interviewed
           </option>
-
           <option value="hired">
             hired
           </option>
-
           <option value="rejected">
             rejected
           </option>
@@ -187,7 +184,7 @@ export default async function CompanyApplicationsPage({
               key={app.id}
               action="/api/company/application-status"
               method="POST"
-              className="border p-5 rounded space-y-3"
+              className="border p-5 rounded space-y-4"
             >
               <input
                 type="hidden"
@@ -197,32 +194,113 @@ export default async function CompanyApplicationsPage({
                 }
               />
 
-              <p className="text-xl font-bold">
-                {
-                  app
-                    .talentProfile
-                    .fullName
-                }
-              </p>
+              {/* INFO PRINCIPAL */}
+              <div>
+                <p className="text-xl font-bold">
+                  {
+                    app
+                      .talentProfile
+                      .fullName
+                  }
+                </p>
 
-              <p>
-                {
-                  app
-                    .talentProfile
-                    .profession
-                }
-              </p>
+                <p className="text-sm text-gray-600">
+                  {
+                    app
+                      .talentProfile
+                      .profession
+                  }
+                </p>
+              </div>
 
-              <p>
+              {/* INFO ADICIONAL */}
+              <div className="text-sm space-y-1">
+                {app.talentProfile
+                  .experienceYears && (
+                  <p>
+                    Experiencia:{" "}
+                    {
+                      app
+                        .talentProfile
+                        .experienceYears
+                    }{" "}
+                    años
+                  </p>
+                )}
+
+                {app.talentProfile
+                  .currentLocationText && (
+                  <p>
+                    Ubicación:{" "}
+                    {
+                      app
+                        .talentProfile
+                        .currentLocationText
+                    }
+                  </p>
+                )}
+
+                {app.talentProfile
+                  .linkedinUrl && (
+                  <a
+                    href={
+                      app
+                        .talentProfile
+                        .linkedinUrl
+                    }
+                    target="_blank"
+                    className="underline block"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+
+              {/* BIO */}
+              {app.talentProfile.bio && (
+                <p className="text-sm">
+                  {
+                    app
+                      .talentProfile
+                      .bio
+                  }
+                </p>
+              )}
+
+              {/* SKILLS */}
+              {app.talentProfile
+                .talentSkills.length >
+                0 && (
+                <div>
+                  <p className="text-sm font-semibold">
+                    Skills
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {app.talentProfile.talentSkills.map(
+                      (ts) => (
+                        <span
+                          key={`${ts.talentProfileId}-${ts.skillId}`}
+                          className="border px-2 py-1 text-xs rounded"
+                        >
+                          {
+                            ts.skill.name
+                          }
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* VACANTE */}
+              <p className="text-sm">
                 Vacante:{" "}
-                {
-                  app.job
-                    .title
-                }
+                {app.job.title}
               </p>
 
-              {app
-                .talentProfile
+              {/* CV */}
+              {app.talentProfile
                 .cvFileUrl && (
                 <a
                   href={
@@ -237,6 +315,15 @@ export default async function CompanyApplicationsPage({
                 </a>
               )}
 
+              {/* FECHA */}
+              <p className="text-xs text-gray-500">
+                Postuló el{" "}
+                {new Date(
+                  app.createdAt
+                ).toLocaleDateString()}
+              </p>
+
+              {/* ESTADO */}
               <div className="flex items-center gap-3">
                 <select
                   name="status"
@@ -248,27 +335,21 @@ export default async function CompanyApplicationsPage({
                   <option value="applied">
                     applied
                   </option>
-
                   <option value="reviewed">
                     reviewed
                   </option>
-
                   <option value="shortlisted">
                     shortlisted
                   </option>
-
                   <option value="interviewed">
                     interviewed
                   </option>
-
                   <option value="hired">
                     hired
                   </option>
-
                   <option value="rejected">
                     rejected
                   </option>
-
                   <option value="withdrawn">
                     withdrawn
                   </option>

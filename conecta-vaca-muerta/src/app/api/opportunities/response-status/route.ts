@@ -3,11 +3,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { NextResponse } from "next/server";
 
-export async function POST(
-  req: Request
-) {
-  const session =
-    await getServerSession(authOptions);
+/*
+  API: actualizar estado de respuesta
+
+  Función:
+  - Aceptar o rechazar propuestas
+  - Si se acepta:
+      → cierra la oportunidad
+      → rechaza todas las demás propuestas
+*/
+
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
 
   if (
     !session ||
@@ -26,8 +33,9 @@ export async function POST(
 
   const status = String(
     formData.get("status")
-  );
+  ) as "accepted" | "rejected";
 
+  // Buscar empresa logueada
   const company =
     await prisma.companyProfile.findUnique({
       where: {
@@ -41,11 +49,10 @@ export async function POST(
     );
   }
 
+  // Buscar la respuesta
   const response =
     await prisma.opportunityResponse.findUnique({
-      where: {
-        id: responseId,
-      },
+      where: { id: responseId },
       include: {
         opportunity: true,
       },
@@ -53,46 +60,64 @@ export async function POST(
 
   if (!response) {
     return NextResponse.redirect(
-      new URL(
-        "/company/opportunities",
-        req.url
-      )
+      new URL("/company/opportunities", req.url)
     );
   }
 
+  // Seguridad: verificar que la oportunidad es de la empresa
   if (
     response.opportunity
       .requesterCompanyProfileId !==
     company.id
   ) {
     return NextResponse.redirect(
-      new URL(
-        "/company/opportunities",
-        req.url
-      )
+      new URL("/company/opportunities", req.url)
     );
   }
 
-  await prisma.opportunityResponse.update({
-    where: {
-      id: responseId,
-    },
-    data: {
-      status:
-        status === "accepted"
-          ? "accepted"
-          : "rejected",
-    },
-  });
+  // ----------- CASO ACEPTAR -----------
 
   if (status === "accepted") {
-    await prisma.opportunity.update({
-      where: {
-        id: response.opportunityId,
-      },
-      data: {
-        status: "in_progress",
-      },
+    // Usamos transacción para mantener consistencia
+    await prisma.$transaction([
+      // 1. Marcar esta como aceptada
+      prisma.opportunityResponse.update({
+        where: { id: responseId },
+        data: { status: "accepted" },
+      }),
+
+      // 2. Rechazar todas las demás
+      prisma.opportunityResponse.updateMany({
+        where: {
+          opportunityId:
+            response.opportunityId,
+          NOT: {
+            id: responseId,
+          },
+        },
+        data: {
+          status: "rejected",
+        },
+      }),
+
+      // 3. Cerrar oportunidad
+      prisma.opportunity.update({
+        where: {
+          id: response.opportunityId,
+        },
+        data: {
+          status: "closed",
+        },
+      }),
+    ]);
+  }
+
+  // ----------- CASO RECHAZAR -----------
+
+  if (status === "rejected") {
+    await prisma.opportunityResponse.update({
+      where: { id: responseId },
+      data: { status: "rejected" },
     });
   }
 

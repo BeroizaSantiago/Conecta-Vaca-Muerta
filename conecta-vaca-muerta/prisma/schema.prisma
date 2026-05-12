@@ -272,6 +272,7 @@ model Opportunity {
   requesterCompanyProfile CompanyProfile @relation(fields: [requesterCompanyProfileId], references: [id], onDelete: Cascade)
 
   responses OpportunityResponse[]
+  opportunityRubros OpportunityRubro[]
 
   @@index([requesterCompanyProfileId])
   @@index([type])
@@ -291,6 +292,11 @@ model OpportunityResponse {
   proposedPrice Decimal? @db.Decimal(12, 2)
 
   currency String @default("ARS")
+
+  paymentTerms String?
+  paymentType String?
+  estimatedTime String?
+  additionalNotes String?
 
   status ResponseStatus @default(pending)
 
@@ -322,6 +328,7 @@ model Rubro {
   children Rubro[] @relation("RubroTree")
 
   companyRubros CompanyRubro[]
+  opportunityRubros OpportunityRubro[]
 
   @@index([parentId])
   @@index([slug])
@@ -337,6 +344,21 @@ model CompanyRubro {
   rubro          Rubro          @relation(fields: [rubroId], references: [id], onDelete: Cascade)
 
   @@id([companyProfileId, rubroId])
+  @@index([rubroId])
+}
+
+model OpportunityRubro {
+  opportunityId String
+  rubroId       String
+
+  createdAt DateTime @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  rubro Rubro @relation(fields: [rubroId], references: [id], onDelete: Cascade)
+
+  @@id([opportunityId, rubroId])
+
   @@index([rubroId])
 }
 

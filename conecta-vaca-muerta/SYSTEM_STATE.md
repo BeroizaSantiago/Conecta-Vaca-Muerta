@@ -1,6 +1,6 @@
 # Estado del Sistema - Conecta Vaca Muerta
 
-> Fecha de generación: 29 de abril de 2026
+> Fecha de generación: 11 de mayo de 2026
 
 ## 1. Información General del Proyecto
 
@@ -171,7 +171,9 @@ registered | attended | canceled | no_show
 - `/api/profile/talent` - Perfil de talento
 - `/api/profile/sponsor` - Perfil de sponsor
 - `/api/profile/talent-skill/` - Habilidades de talento
-- `/api/profile/talent/upload-cv` - Subir CV
+
+### 5.3.1 Talento
+- `/api/talent/upload-cv/` - Subir CV del talento
 
 ### 5.4 Empleos
 - `/api/jobs/create` - Crear empleo
@@ -193,17 +195,14 @@ registered | attended | canceled | no_show
 ### 5.8 Eventos
 - `/api/events/register/` - Registrarse a evento
 
-### 5.9 Registro
-- `/api/register/route.ts` - Registro de usuarios
-
-### 5.10 Rubros
-- `/api/rubros/route.ts` - Gestión de rubros
-
-### 5.11 Suscripciones
+### 5.9 Suscripciones
 - `/api/subscriptions/create` - Crear suscripción
 
-### 5.12 Talento
-- `/api/talent/upload-cv` - Subir CV de talento
+### 5.10 Registro
+- `/api/register` - Registro de usuarios
+
+### 5.11 Rubros
+- `/api/rubros` - Gestión de rubros
 
 ---
 

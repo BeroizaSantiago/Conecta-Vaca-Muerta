@@ -2,12 +2,24 @@
 
 import { useEffect, useState } from "react";
 
+/*
+  Módulo: CompanyForm
+
+  Función:
+  Permite editar perfil empresa.
+  Ahora carga datos existentes (edición real).
+*/
+
 type Rubro = {
   id: string;
   name: string;
 };
 
-export default function CompanyForm() {
+export default function CompanyForm({
+  initialData,
+}: {
+  initialData: any;
+}) {
   const [rubros, setRubros] =
     useState<Rubro[]>([]);
 
@@ -16,10 +28,18 @@ export default function CompanyForm() {
 
   const [form, setForm] =
     useState({
-      companyName: "",
-      description: "",
-      contactEmail: "",
-      contactPhone: "",
+      companyName:
+        initialData?.companyName ||
+        "",
+      description:
+        initialData?.description ||
+        "",
+      contactEmail:
+        initialData?.contactEmail ||
+        "",
+      contactPhone:
+        initialData?.contactPhone ||
+        "",
     });
 
   useEffect(() => {
@@ -31,6 +51,7 @@ export default function CompanyForm() {
         setRubros(data)
       );
   }, []);
+
 
   const toggleRubro = (
     id: string
@@ -62,13 +83,15 @@ export default function CompanyForm() {
           "/api/profile/company",
           {
             method: "POST",
-            body: JSON.stringify(
-              {
-                ...form,
-                rubros:
-                  selected,
-              }
-            ),
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              ...form,
+              rubros:
+                selected,
+            }),
           }
         );
 
@@ -79,92 +102,92 @@ export default function CompanyForm() {
     };
 
   return (
-    <form
-      onSubmit={
-        handleSubmit
-      }
-      className="space-y-4"
-    >
-      <input
-        className="border p-2 w-full"
-        placeholder="Nombre empresa"
-        onChange={(e) =>
-          setForm({
-            ...form,
-            companyName:
-              e.target.value,
-          })
-        }
-      />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Nombre empresa
+        </label>
+        <input
+          className="border p-2 w-full"
+          value={form.companyName}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              companyName: e.target.value,
+            })
+          }
+        />
+      </div>
 
       <div>
-        <p className="font-semibold mb-2">
+        <p className="text-sm font-medium mb-2">
           Rubros
         </p>
 
         <div className="grid grid-cols-2 gap-2">
-          {rubros.map(
-            (item) => (
-              <label
-                key={
-                  item.id
-                }
-                className="border p-2 rounded text-sm flex gap-2"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(
-                    item.id
-                  )}
-                  onChange={() =>
-                    toggleRubro(
-                      item.id
-                    )
-                  }
-                />
-
-                {item.name}
-              </label>
-            )
-          )}
+          {rubros.map((item) => (
+            <label
+              key={item.id}
+              className="border p-2 rounded text-sm flex gap-2"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(item.id)}
+                onChange={() => toggleRubro(item.id)}
+              />
+              {item.name}
+            </label>
+          ))}
         </div>
       </div>
 
-      <textarea
-        className="border p-2 w-full"
-        placeholder="Descripción"
-        onChange={(e) =>
-          setForm({
-            ...form,
-            description:
-              e.target.value,
-          })
-        }
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Descripción
+        </label>
+        <textarea
+          className="border p-2 w-full"
+          value={form.description}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              description: e.target.value,
+            })
+          }
+        />
+      </div>
 
-      <input
-        className="border p-2 w-full"
-        placeholder="Email contacto"
-        onChange={(e) =>
-          setForm({
-            ...form,
-            contactEmail:
-              e.target.value,
-          })
-        }
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Email de contacto
+        </label>
+        <input
+          className="border p-2 w-full"
+          value={form.contactEmail}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              contactEmail: e.target.value,
+            })
+          }
+        />
+      </div>
 
-      <input
-        className="border p-2 w-full"
-        placeholder="Teléfono"
-        onChange={(e) =>
-          setForm({
-            ...form,
-            contactPhone:
-              e.target.value,
-          })
-        }
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Teléfono
+        </label>
+        <input
+          className="border p-2 w-full"
+          value={form.contactPhone}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              contactPhone: e.target.value,
+            })
+          }
+        />
+      </div>
 
       <button className="bg-black text-white px-4 py-2">
         Guardar Perfil Empresa
